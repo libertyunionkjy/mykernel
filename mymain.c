@@ -16,6 +16,7 @@
 
 #include "mypcb.h"
 
+/* tPCB是PCB结构体的别名 在mypcb.h中声明 */
 tPCB task[MAX_TASK_NUM];
 tPCB * my_current_task = NULL;
 volatile int my_need_sched = 0;
@@ -30,6 +31,7 @@ void __init my_start_kernel(void)
     /* Initialize process 0*/
     task[pid].pid = pid;
     task[pid].state = 0;/* -1 unrunnable, 0 runnable, >0 stopped */
+    /* 这里直接使用函数名代表函数的起始地址 */
     task[pid].task_entry = task[pid].thread.ip = (unsigned long)my_process;
     task[pid].thread.sp = (unsigned long)&task[pid].stack[KERNEL_STACK_SIZE-1];
     task[pid].next = &task[pid];
@@ -49,7 +51,7 @@ void __init my_start_kernel(void)
     	"movq %1,%%rsp\n\t" 	/* set task[pid].thread.sp to rsp 这里是初始化为0*/
     	"pushq %1\n\t" 	        /* push rbp */
     	"pushq %0\n\t" 	        /* push task[pid].thread.ip */
-    	"ret\n\t" 	            /* pop task[pid].thread.ip to rip */
+    	"ret\n\t" 	            /* pop task[pid].thread.ip to rip ，然后就会开始执行my_process函数*/
     	: 
     	: "c" (task[pid].thread.ip),"d" (task[pid].thread.sp)	/* input c or d mean %ecx/%edx*/
 	);

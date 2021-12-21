@@ -50,19 +50,25 @@ void my_schedule(void)
     /* schedule */
     next = my_current_task->next;
     prev = my_current_task;
-    if(next->state == 0)/* -1 unrunnable, 0 runnable, >0 stopped */
+    if(next->state == 0)/* -1 unrunnable, 0 runnable, >0 stopped ，0代表这个进程可执行/被执行过 */
     {        
     	my_current_task = next; 
+        /* 输出一个提示，从什么进程切换到什么进程 */
     	printk(KERN_NOTICE ">>>switch %d to %d<<<\n",prev->pid,next->pid);  
     	/* switch to next process */
-    	asm volatile(	
+    	asm volatile(
+            /* 
+            * 每个进程的rbp是当前进程栈的最后一个入栈的值，后面rsp就会变化，
+            * 从而换到另外一个栈空间，
+            * 另外也可以得知每个进程被调度后一定要先pop一下恢复rbp的值 
+            */	
         	"pushq %%rbp\n\t" 	    /* save rbp of prev */
-        	"movq %%rsp,%0\n\t" 	/* save rsp of prev */
-        	"movq %2,%%rsp\n\t"     /* restore  rsp of next */
-        	"movq $1f,%1\n\t"       /* save rip of prev */	
-        	"pushq %3\n\t" 
-        	"ret\n\t" 	            /* restore  rip of next */
-        	"1:\t"                  /* next process start here */
+        	"movq %%rsp,%0\n\t" 	/* prev进程的rsp是保存在pcb中的 */
+        	"movq %2,%%rsp\n\t"     /* 恢复next进程的rsp值 */
+        	"movq $1f,%1\n\t"       /* 保存prev的rip值，这里1f其实就是后面的popq的地址 */	
+        	"pushq %3\n\t"          /* 从pcb中取出rip */
+        	"ret\n\t" 	            /* 恢复rip的值 */
+        	"1:\t"                  /* next进程从这儿开始执行 */
         	"popq %%rbp\n\t"
         	: "=m" (prev->thread.sp),"=m" (prev->thread.ip)
         	: "m" (next->thread.sp),"m" (next->thread.ip)
