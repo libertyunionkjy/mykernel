@@ -46,7 +46,7 @@ void __init my_start_kernel(void)
     pid = 0;
     my_current_task = &task[pid];
 	asm volatile(
-    	"movq %1,%%rsp\n\t" 	/* set task[pid].thread.sp to rsp */
+    	"movq %1,%%rsp\n\t" 	/* set task[pid].thread.sp to rsp 这里是初始化为0*/
     	"pushq %1\n\t" 	        /* push rbp */
     	"pushq %0\n\t" 	        /* push task[pid].thread.ip */
     	"ret\n\t" 	            /* pop task[pid].thread.ip to rip */
